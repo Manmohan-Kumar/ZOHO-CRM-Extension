@@ -8,6 +8,7 @@ var resp;
 var txt;
 var tab;
 var templateSelected = 0;
+var entity;
 recepients = [];
 updates = [];
 names = [];
@@ -20,11 +21,12 @@ $(document).ready(function() {
 var count=0;
 utils.n=0;
         tab = "";
+		entity = data.Entity;
         for (var id in data.EntityId) {
 			if(data.Entity == "Accounts"){
 				ZOHO.CRM.API.getRelatedRecords({Entity:data.Entity,RecordID:data.EntityId[id],RelatedList:"Contacts"})
-					.then(function(data){					
-						console.log(data);                    
+					.then(function(data){
+						entity = "Contacts";						
 						for(var id in data){							
 								utils.n++;
 								names.push(data[id].Full_Name);
@@ -374,8 +376,7 @@ function sendMessage(reqBody) {
 	  url: reqBody.url,
 	  data: reqBody.params,
 	  headers:reqBody.headers,
-	  success: function(res) {
-		//console.log(res);
+	  success: function(res) {		
 		return res;
 	  }	  
 	});
@@ -406,21 +407,26 @@ function showReport(data, messages) {
             Name: recepients[index].data.Full_Name,
             Mobile: recepients[index].data.Mobile,
             Status: status			
-        })
-
-        var recData = {
+        })		
+		
+        var recData = $.extend({},{
             "telesignsms.CustomModule2_Name": recepients[index].data.Full_Name,
             "telesignsms.Message_sent": messages[index],
             "telesignsms.Status": status,
             //"message360sruthy.Sent_From": frmNo,
-            "telesignsms.Contact_Name": recepients[index].data.id,
+            //"telesignsms.Contact_Name": recepients[index].data.id,
+			"telesignsms.Lead_Name": entity == "Leads" ? recepients[index].data.id : undefined,
+			"telesignsms.Contact_Name": entity == "Contacts" ? recepients[index].data.id : undefined,
             "telesignsms.Template_used":utils.id,
 			"telesignsms.TeleSign_Reference_Id": response.reference_id
-        }
+        });
+		console.log(recData);
         ZOHO.CRM.API.insertRecord({
             Entity: "telesignsms.TeleSign_SMS_History",
             APIData: recData
         }).then(function(data) {
+		console.log("insert record");
+		console.log(data);
         });
 
     }
@@ -433,27 +439,7 @@ function showReport(data, messages) {
     $("#report").show();
     $('#loading').hide();
 }
-function updateOrgVariable(authVar)
-{
-    if(authVar=="accntSID")
-    {
-        var newAccntSid=document.getElementById("modifiedAccntSid").value;
-        parameterMap={"apiname":"message360sruthy.accSID","value":newAccntSid};
-        ZOHO.CRM.CONNECTOR.invokeAPI("crm.set",parameterMap)
-.then(function(data){
-})
-document.getElementById("acSID").innerHTML="<b>Account SID:</b>"+newAccntSid;
-    }
-    if(authVar=="auth")
-    {
-        var newAuth=document.getElementById("modifiedAuth").value;
-        parameterMap={"apiname":"message360sruthy.authToken","value":newAuth};
-        ZOHO.CRM.CONNECTOR.invokeAPI("crm.set",parameterMap)
-.then(function(data){
-})
-document.getElementById("authToken").innerHTML="<b>Auth Token:</b>"+newAuth;
-    }
-}
+
 function closePopUp(toReload) {
     if (toReload) {
         return ZOHO.CRM.UI.Popup.closeReload();
