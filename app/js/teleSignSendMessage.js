@@ -17,7 +17,6 @@ utils={};
 $(document).ready(function() {
     ZOHO.embeddedApp.on("PageLoad", function(data) {
         $('#loading').show();
-		console.log(data);
 var count=0;
 utils.n=0;
         tab = "";
@@ -25,13 +24,13 @@ utils.n=0;
         for (var id in data.EntityId) {
 			if(data.Entity == "Accounts"){
 				ZOHO.CRM.API.getRelatedRecords({Entity:data.Entity,RecordID:data.EntityId[id],RelatedList:"Contacts"})
-					.then(function(data){
-						entity = "Contacts";						
+					.then(function(data){			
 						for(var id in data){							
 								utils.n++;
 								names.push(data[id].Full_Name);
 								recepients.push({
-									"data": data[id]
+									"data": data[id],
+									"entity" : "Contacts"
 								});
 
 								if(utils.n<=6)
@@ -52,18 +51,77 @@ utils.n=0;
 								document.getElementById("recipientsList").innerHTML += tab;								
 						}						
 					})
-			}
+			}			
+			else if(data.Entity == "Campaigns"){
+				ZOHO.CRM.API.getRelatedRecords({Entity:data.Entity,RecordID:data.EntityId[id],RelatedList:"Leads"})
+					.then(function(data){
+						for(var id in data){							
+								utils.n++;
+								names.push(data[id].Full_Name);
+								recepients.push({
+									"data": data[id],
+									"entity" : "Leads"
+								});
+
+								if(utils.n<=6)
+								{
+									tab='<li class="conlist" id="'+data[id].id+'"><span style="color:#222;">'+data[id].Full_Name+'</span><span class="ConText" onclick="deleteRow(this.id,this.parentNode.id)" id="'+count+'"></span></li>';
+									count++;									
+								}
+								else
+								{									
+									tab='<li class="hidden" style="display: none;" id="'+data[id].id+'"><span style="color:#222;">'+data[id].Full_Name+'</span><span class="ConText" onclick="deleteRow(this.id,this.parentNode.id)" id="'+count+'"></span></li>'
+									count++;								
+
+								}
+								if(id>=9)
+								{
+									tab+="</div>"
+								}
+								document.getElementById("recipientsList").innerHTML += tab;								
+						}						
+					})
+				ZOHO.CRM.API.getRelatedRecords({Entity:data.Entity,RecordID:data.EntityId[id],RelatedList:"Contacts"})
+					.then(function(data){						
+						for(var id in data){							
+								utils.n++;
+								names.push(data[id].Full_Name);
+								recepients.push({
+									"data": data[id],
+									"entity" : "Contacts"
+								});
+
+								if(utils.n<=6)
+								{
+									tab='<li class="conlist" id="'+data[id].id+'"><span style="color:#222;">'+data[id].Full_Name+'</span><span class="ConText" onclick="deleteRow(this.id,this.parentNode.id)" id="'+count+'"></span></li>';
+									count++;									
+								}
+								else
+								{									
+									tab='<li class="hidden" style="display: none;" id="'+data[id].id+'"><span style="color:#222;">'+data[id].Full_Name+'</span><span class="ConText" onclick="deleteRow(this.id,this.parentNode.id)" id="'+count+'"></span></li>'
+									count++;								
+
+								}
+								if(id>=9)
+								{
+									tab+="</div>"
+								}
+								document.getElementById("recipientsList").innerHTML += tab;								
+						}						
+					})
+			}			
 			else {
             ZOHO.CRM.API.getRecord({                    
 					Entity: data.Entity,
                     RecordID: data.EntityId[id]
                 })
                 .then(function(data) {
-				console.log(data);
+	
                    utils.n++;
                     names.push(data.Full_Name);
                     recepients.push({
-                        "data": data
+                        "data": data,
+						"entity" : data.Entity
                     });
 
                     if(utils.n<=6)
@@ -203,7 +261,6 @@ for(var k in recepients)
 {
     if(recepients[k].data.id==id)
     {
-        console.log(recepients[k].data.Full_Name)
     recepients.splice(k, 1);
     $('#'+id).remove();
 }
@@ -300,14 +357,14 @@ function sendsms() {
     /*
      * get all dynamic placeholders
      */
-     console.log(recepients)
+
      
     var msgContent = document.getElementById("msgTxt").value;
     var fields = [];
     var promises = [];
     var messages = [];
     var fieldRegex = /\$\((\w*)\)/g;
-    //var frmNo = document.getElementById("toNumber").value;
+
     if(msgContent!="")
     {
         do {
@@ -380,11 +437,6 @@ function sendMessage(reqBody) {
 		return res;
 	  }	  
 	});
-    /*var promise = ZOHO.CRM.HTTP.post(reqBody)
-        .then(function(data) {		
-            return data;
-        });*/
-	console.log(promise);
     return promise;
 }
 
@@ -392,12 +444,11 @@ function sendMessage(reqBody) {
 function showReport(data, messages) {
     var status;
     var statusRep = [];	
-	console.log(recepients);
-    for (var index in recepients) {console.log(index);
-	debugger;
-        //response = JSON.parse(data[index])
+
+    for (var index in recepients) {
+        
 		response = data[index]
-		console.log(response);		
+		
         if (response.status.code != 290) {
             status = response.status.description;
         } else {
@@ -408,15 +459,13 @@ function showReport(data, messages) {
             Mobile: recepients[index].data.Mobile,
             Status: status			
         })		
-		
+		debugger;
         var recData = $.extend({},{
             "telesignsms.CustomModule2_Name": recepients[index].data.Full_Name,
             "telesignsms.Message_sent": messages[index],
-            "telesignsms.Status": status,
-            //"message360sruthy.Sent_From": frmNo,
-            //"telesignsms.Contact_Name": recepients[index].data.id,
-			"telesignsms.Lead_Name": entity == "Leads" ? recepients[index].data.id : undefined,
-			"telesignsms.Contact_Name": entity == "Contacts" ? recepients[index].data.id : undefined,
+            "telesignsms.Status": status,            
+			"telesignsms.Lead_Name": recepients[index].entity == "Leads" ? recepients[index].data.id : undefined,
+			"telesignsms.Contact_Name": recepients[index].entity == "Contacts" ? recepients[index].data.id : undefined,
             "telesignsms.Template_used":utils.id,
 			"telesignsms.TeleSign_Reference_Id": response.reference_id
         });
@@ -424,9 +473,7 @@ function showReport(data, messages) {
         ZOHO.CRM.API.insertRecord({
             Entity: "telesignsms.TeleSign_SMS_History",
             APIData: recData
-        }).then(function(data) {
-		console.log("insert record");
-		console.log(data);
+        }).then(function(data) {		
         });
 
     }
