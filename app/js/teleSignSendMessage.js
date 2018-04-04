@@ -121,7 +121,7 @@ utils.n=0;
                     names.push(data.Full_Name);
                     recepients.push({
                         "data": data,
-						"entity" : data.Entity
+						"entity" : entity
                     });
 
                     if(utils.n<=6)
@@ -175,10 +175,10 @@ else if(action==2){
             $("#fieldnames").html(html); //rendering it
         });
     }).then(function() {
-        ZOHO.CRM.CONFIG.getOrgVariable("telesignsms.tscustomerId").then(function(data) {
+        ZOHO.CRM.CONFIG.getOrgVariable("telesignsms.customerId").then(function(data) {
             utils.accntSID = data.Success.Content;
         }).then(function() {
-            ZOHO.CRM.CONFIG.getOrgVariable("telesignsms.tsapikey").then(function(data) {
+            ZOHO.CRM.CONFIG.getOrgVariable("telesignsms.apikey").then(function(data) {
                 utils.auth = data.Success.Content;
                 str = utils.accntSID + ":" + utils.auth;
                 utils.encodedAuth = btoa(str);
