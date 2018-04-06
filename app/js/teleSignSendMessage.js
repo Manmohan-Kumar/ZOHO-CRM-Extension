@@ -380,7 +380,7 @@ function sendsms() {
      * loop through all message recipients and send sms
      */
 
-    if (recepients) {
+    if (checkMobileMumber(recepients)) {
         $('#loading').show();
         for (var i in recepients) {
             var message = generatePersonalMessage(msgContent, fields, recepients[i]);
@@ -438,6 +438,24 @@ function sendMessage(reqBody) {
 	  }	  
 	});
     return promise;
+}
+
+function checkMobileMumber(recipients){
+	var empty = false;
+	if(recipients){
+		for(var i in recipients){
+			if(!recipients[i].data.Mobile){
+					document.getElementById(recipients[i].data.id).style.borderColor="#ff0000";
+					empty = true;	
+					}
+			}
+		if(empty){
+			$("#mobileEmptyAlert").show();
+			return false;
+			} else {return true;}
+		} else {
+		return false;
+		}
 }
 
 //function showReport(data, messages, frmNo) {
